@@ -23,7 +23,7 @@ work on CKAN.
 If you're using a Debian-based operating system (such as Ubuntu) install the
 required packages with this command::
 
-    sudo apt-get install python-dev postgresql libpq-dev python-pip python-virtualenv git-core solr-jetty openjdk-6-jdk
+    sudo apt-get install python-dev postgresql libpq-dev python-pip python-virtualenv git-core solr-tomcat openjdk-6-jdk
 
 If you're not using a Debian-based operating system, find the best way to
 install the following packages on your operating system (see
@@ -34,7 +34,7 @@ wiki page for help):
 Package                Description
 =====================  ===============================================
 Python                 `The Python programming language, v2.6 or 2.7 <http://www.python.org/getit/>`_
-|postgres|             `The PostgreSQL database system, v8.4 or newer <http://www.postgresql.org/download/>`_
+POSTGRES               `The PostgreSQL database system, v8.4 or newer <http://www.postgresql.org/download/>`_
 libpq                  `The C programmer's interface to PostgreSQL <http://www.postgresql.org/docs/8.1/static/libpq.html>`_
 pip                    `A tool for installing and managing Python packages <http://www.pip-installer.org>`_
 virtualenv             `The virtual Python environment builder <http://www.virtualenv.org>`_
@@ -62,19 +62,19 @@ OpenJDK 6 JDK          `The Java Development Kit <http://openjdk.java.net/instal
    .. parsed-literal::
 
      mkdir -p ~/ckan/lib
-     sudo ln -s ~/ckan/lib |virtualenv_parent_dir|
+     sudo ln -s ~/ckan/lib /usr/lib/ckan
      mkdir -p ~/ckan/etc
-     sudo ln -s ~/ckan/etc |config_parent_dir|
+     sudo ln -s ~/ckan/etc /etc/ckan
 
 a. Create a Python `virtual environment <http://www.virtualenv.org>`_
    (virtualenv) to install CKAN into, and activate it:
 
    .. parsed-literal::
 
-       sudo mkdir -p |virtualenv|
-       sudo chown \`whoami\` |virtualenv|
-       virtualenv --no-site-packages |virtualenv|
-       |activate|
+       sudo mkdir -p /usr/lib/ckan/default
+       sudo chown www-data /usr/lib/ckan/default
+       virtualenv --no-site-packages /usr/lib/ckan/default
+       . /usr/lib/ckan/default/bin/activate
 
 .. important::
 
@@ -91,7 +91,7 @@ a. Create a Python `virtual environment <http://www.virtualenv.org>`_
 
    .. parsed-literal::
 
-       |activate|
+      . /usr/lib/ckan/default/bin/activate
 
 b. Install the CKAN source code into your virtualenv.
    To install the latest stable release of CKAN (CKAN |latest_release_version|),
@@ -99,7 +99,7 @@ b. Install the CKAN source code into your virtualenv.
 
    .. parsed-literal::
 
-      pip install -e 'git+\ |git_url|\@\ |latest_release_tag|\#egg=ckan'
+      pip install -e 'git+https://github.com/ckan/ckan.git@ckan-2.5.1#egg=ckan'
 
    If you're installing CKAN for development, you may want to install the
    latest development version (the most recent commit on the master branch of
@@ -107,7 +107,7 @@ b. Install the CKAN source code into your virtualenv.
 
    .. parsed-literal::
 
-       pip install -e 'git+\ |git_url|\#egg=ckan'
+       pip install -e 'git+https://github.com/ckan/ckan.git#egg=ckan'
 
    .. warning::
 
@@ -123,7 +123,7 @@ c. Install the Python modules that CKAN requires into your virtualenv:
 
    .. parsed-literal::
 
-       pip install -r |virtualenv|/src/ckan/requirements.txt
+       pip install -r /usr/lib/ckan/default/src/ckan/requirements.txt
 
 d. Deactivate and reactivate your virtualenv, to make sure you're using the
    virtualenv's copies of commands like ``paster`` rather than any system-wide
@@ -132,7 +132,7 @@ d. Deactivate and reactivate your virtualenv, to make sure you're using the
    .. parsed-literal::
 
         deactivate
-        |activate|
+        . /usr/lib/ckan/default/bin/activate
 
 .. _postgres-setup:
 
@@ -155,14 +155,14 @@ password for the user when prompted. You'll need this password later:
 
 .. parsed-literal::
 
-    sudo -u postgres createuser -S -D -R -P |database_user|
+    sudo -u postgres createuser -S -D -R -P ckan_default
 
 Create a new |postgres| database, called |database|, owned by the
 database user you just created:
 
 .. parsed-literal::
 
-    sudo -u postgres createdb -O |database_user| |database| -E utf-8
+    sudo -u postgres createdb -O ckan_default ckan_default -E utf-8
 
 .. note::
 
@@ -190,14 +190,14 @@ Create a directory to contain the site's config files:
 
 .. parsed-literal::
 
-    sudo mkdir -p |config_dir|
-    sudo chown -R \`whoami\` |config_parent_dir|/
+    sudo mkdir -p /etc/ckan/default
+    sudo chown -R `whoami` /etc/ckan/
 
 Create the CKAN config file:
 
 .. parsed-literal::
 
-    paster make-config ckan |development.ini|
+    paster make-config ckan /etc/ckan/default/development.ini
 
 Edit the ``development.ini`` file in a text editor, changing the following
 options:
@@ -208,7 +208,7 @@ sqlalchemy.url
 
   .. parsed-literal::
 
-    sqlalchemy.url = postgresql://|database_user|:pass@localhost/|database|
+    sqlalchemy.url = postgresql://ckan_default:pass@localhost/ckan_default
 
   Replace ``pass`` with the password that you created in `3. Setup a
   PostgreSQL database`_ above.
@@ -220,7 +220,7 @@ sqlalchemy.url
 
     .. parsed-literal::
 
-      sqlalchemy.url = postgresql://|database_user|:pass@<remotehost>/|database|?sslmode=disable
+      sqlalchemy.url = postgresql://ckan_default:pass@<remotehost>/ckan_default?sslmode=disable
 
 site_id
   Each CKAN site should have a unique ``site_id``, for example::
@@ -251,42 +251,40 @@ installed, we need to install and configure Solr.
 
    These instructions explain how to setup |solr| with a single core.
    If you want multiple applications, or multiple instances of CKAN, to share
-   the same |solr| server then you probably want a multi-core |solr| setup
-   instead. See :doc:`/maintaining/solr-multicore`.
+   the same |solr| server then you probably want a multi-core setup
+   instead. See :doc:`http://docs.ckan.org/en/ckan-2.5.1/maintaining/solr-multicore.html`.
 
 .. note::
 
-   These instructions explain how to deploy Solr using the Jetty web
-   server, but CKAN doesn't require Jetty - you can deploy Solr to another web
-   server, such as Tomcat, if that's convenient on your operating system.
+   These instructions explain how to deploy Solr using the Tomcat web
+   server, but CKAN doesn't require Tomcat - you can deploy Solr to another web
+   server, such as Jetty, if that's convenient on your operating system.
 
-#. Edit the Jetty configuration file (``/etc/default/jetty``) and change the
+#. Edit the Tomcat configuration file (``/etc/default/tomcat6``) and change the
    following variables::
 
-    NO_START=0            # (line 4)
-    JETTY_HOST=127.0.0.1  # (line 16)
-    JETTY_PORT=8983       # (line 19)
+
 
    .. note::
 
-    This ``JETTY_HOST`` setting will only allow connections from the same machine.
-    If CKAN is not installed on the same machine as Jetty/Solr you will need to
+    This Tomcat Host setting will only allow connections from the same machine.
+    If CKAN is not installed on the same machine as Tomcat/Solr you will need to
     change it to the relevant host or to 0.0.0.0 (and probably set up your firewall
     accordingly).
 
-   Start the Jetty server::
+   Start the Tomcat server::
 
-    sudo service jetty start
+    sudo service tomcat6 start
 
    You should now see a welcome page from Solr if you open
-   http://localhost:8983/solr/ in your web browser (replace localhost with
+   http://localhost:8080/solr/ in your web browser (replace localhost with
    your server address if needed).
 
    .. note::
 
     If you get the message ``Could not start Jetty servlet engine because no
     Java Development Kit (JDK) was found.`` then you will have to edit the
-    ``JAVA_HOME`` setting in ``/etc/default/jetty`` to point to your machine's
+    ``JAVA_HOME`` setting in ?? to point to your machine's
     JDK install location. For example::
 
         JAVA_HOME=/usr/lib/jvm/java-6-openjdk-amd64/
@@ -301,21 +299,21 @@ installed, we need to install and configure Solr.
    .. parsed-literal::
 
       sudo mv /etc/solr/conf/schema.xml /etc/solr/conf/schema.xml.bak
-      sudo ln -s |virtualenv|/src/ckan/ckan/config/solr/schema.xml /etc/solr/conf/schema.xml
+      sudo ln -s /usr/lib/ckan/default/src/ckan/ckan/config/solr/schema.xml /etc/solr/conf/schema.xml
 
    Now restart Solr:
 
    .. parsed-literal::
 
-      |restart_solr|
+      sudo service tomcat6 restart
 
-   and check that Solr is running by opening http://localhost:8983/solr/.
+   and check that Solr is running by opening http://localhost:8080/solr/.
 
 
 #. Finally, change the :ref:`solr_url` setting in your CKAN config file to
    point to your Solr server, for example::
 
-       solr_url=http://127.0.0.1:8983/solr
+       solr_url=http://127.0.0.1:8080/solr
 
 .. _postgres-init:
 
@@ -328,8 +326,8 @@ database, you can create the database tables:
 
 .. parsed-literal::
 
-    cd |virtualenv|/src/ckan
-    paster db init -c |development.ini|
+    cd /usr/lib/ckan/default/src/ckan
+    paster db init -c /etc/ckan/default/development.ini
 
 You should see ``Initialising DB: SUCCESS``.
 
@@ -361,7 +359,7 @@ same directory as your CKAN config file, so create a symlink to it:
 
 .. parsed-literal::
 
-    ln -s |virtualenv|/src/ckan/who.ini |config_dir|/who.ini
+    ln -s /usr/lib/ckan/default/src/ckan/who.ini /etc/ckan/default/who.ini
 
 ---------------
 9. You're done!
@@ -373,8 +371,8 @@ useful for development and testing:
 
 .. parsed-literal::
 
-    cd |virtualenv|/src/ckan
-    paster serve |development.ini|
+    cd /usr/lib/ckan/default/src/ckan
+    paster serve /etc/ckan/default/development.ini
 
 Open http://127.0.0.1:5000/ in a web browser, and you should see the CKAN front
 page.
@@ -405,10 +403,6 @@ Solr setup troubleshooting
 
 Solr requests and errors are logged in the web server log files.
 
-* For Jetty servers, the log files are::
-
-    /var/log/jetty/<date>.stderrout.log
-
 * For Tomcat servers, they're::
 
     /var/log/tomcat6/catalina.<date>.log
@@ -434,7 +428,7 @@ and then restart Solr:
 
 .. parsed-literal::
 
-   |restart_solr|
+   sudo service tomcat6 restart
 
 AttributeError: 'module' object has no attribute 'css/main.debug.css'
 ---------------------------------------------------------------------
