@@ -191,7 +191,7 @@ Create a directory to contain the site's config files:
 .. parsed-literal::
 
     sudo mkdir -p /etc/ckan/default
-    sudo chown -R `whoami` /etc/ckan/
+    sudo chown -R |`whoami`| /etc/ckan/
 
 Create the CKAN config file:
 
