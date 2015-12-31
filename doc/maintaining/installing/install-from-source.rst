@@ -72,7 +72,7 @@ a. Create a Python `virtual environment <http://www.virtualenv.org>`_
    .. parsed-literal::
 
        sudo mkdir -p /usr/lib/ckan/default
-       sudo chown "`whoami`" /usr/lib/ckan/default
+       sudo chown |`whoami`| /usr/lib/ckan/default
        virtualenv --no-site-packages /usr/lib/ckan/default
        . /usr/lib/ckan/default/bin/activate
 
